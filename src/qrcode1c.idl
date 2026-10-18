@@ -1,0 +1,20 @@
+// Библиотека типов компоненты: по ней 1С может найти объект AddIn.QRCode1C внутри DLL.
+[
+    uuid(E6289C53-FA61-4380-8D3E-DE91503BCB7D),
+    version(1.0),
+    helpstring("QRCode1C: QR codes for 1C:Enterprise 8.1")
+]
+library QRCode1CLib
+{
+    importlib("stdole2.tlb");
+
+    // Интерфейсы 1С (IInitDone, ILanguageExtender) объект отдаёт через QueryInterface,
+    // описывать их здесь не нужно.
+    [
+        uuid(FE7F2501-F9F2-4B32-AA3F-50DD8C65BDF9),
+        helpstring("QRCode1C")
+    ]
+    coclass QRCode1C
+    {
+    };
+};

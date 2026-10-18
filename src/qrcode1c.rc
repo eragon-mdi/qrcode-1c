@@ -1,0 +1,32 @@
+#include <winver.h>
+#include "version.h"
+
+1 TYPELIB "qrcode1c.tlb"
+
+1 VERSIONINFO
+FILEVERSION QRCODE1C_VERSION_MAJOR, QRCODE1C_VERSION_MINOR, QRCODE1C_VERSION_PATCH, 0
+PRODUCTVERSION QRCODE1C_VERSION_MAJOR, QRCODE1C_VERSION_MINOR, QRCODE1C_VERSION_PATCH, 0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_DLL
+FILESUBTYPE 0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041904B0"
+        BEGIN
+            VALUE "FileDescription", "QRCode1C - генератор QR-кодов для 1С:Предприятия 8.1"
+            VALUE "FileVersion", QRCODE1C_VERSION_STR
+            VALUE "InternalName", "qrcode1c"
+            VALUE "OriginalFilename", "qrcode1c.dll"
+            VALUE "ProductName", "QRCode1C"
+            VALUE "ProductVersion", QRCODE1C_VERSION_STR
+            VALUE "LegalCopyright", "QR Code generator library (c) Project Nayuki, MIT License"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x419, 1200
+    END
+END
