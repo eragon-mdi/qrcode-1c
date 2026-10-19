@@ -99,7 +99,10 @@ static void ZlibStored(const uint8_t *data, size_t n, Buffer *out) {
 bool RenderQrPng(const uint8_t qrcode[], int scale, int border, Buffer *out) {
     int modules = qrcodegen_getSize(qrcode) + 2 * border;
     int side = modules * scale;
-    size_t rowBytes = ((size_t)side + 7) / 8;
+    // Обычный truecolor RGB, 8 бит на канал. Монохромный PNG (1 бит, оттенки серого)
+    // был бы в 24 раза меньше, но 1С:Предприятие 8.1 показывает его пустой картинкой,
+    // хотя файл корректный и открывается в Windows.
+    size_t rowBytes = (size_t)side * 3;
     size_t stride = rowBytes + 1;  // байт фильтра PNG перед каждой строкой
 
     Buffer raw;
@@ -111,14 +114,14 @@ bool RenderQrPng(const uint8_t qrcode[], int scale, int border, Buffer *out) {
     raw.size = stride * side;
 
     // Каждая строка модулей рисуется один раз и копируется scale раз.
-    // Бит 1 — белый, 0 — чёрный (оттенки серого, 1 бит).
+    // Белый — FF FF FF, чёрный — 00 00 00.
     for (int my = 0; my < modules; my++) {
         uint8_t *row = raw.data + (size_t)my * scale * stride;
         memset(row, 0xFF, stride);
         row[0] = 0;
         for (int px = 0; px < side; px++) {
             if (qrcodegen_getModule(qrcode, px / scale - border, my - border))
-                row[1 + px / 8] &= (uint8_t)~(0x80u >> (px % 8));
+                memset(row + 1 + (size_t)px * 3, 0x00, 3);
         }
         for (int k = 1; k < scale; k++)
             memcpy(row + k * stride, row, stride);
@@ -128,15 +131,21 @@ bool RenderQrPng(const uint8_t qrcode[], int scale, int border, Buffer *out) {
     uint8_t ihdr[13] = {
         (uint8_t)(side >> 24), (uint8_t)(side >> 16), (uint8_t)(side >> 8), (uint8_t)side,
         (uint8_t)(side >> 24), (uint8_t)(side >> 16), (uint8_t)(side >> 8), (uint8_t)side,
-        1,  // бит на пиксель
-        0,  // оттенки серого
+        8,  // бит на канал
+        2,  // truecolor RGB
         0, 0, 0};
 
+    // Размер zlib-потока известен заранее: заголовок 2 байта, по 5 байт на каждый
+    // stored-блок до 65535 байт, Adler-32 4 байта. Резервируем сразу, без удвоений.
+    size_t blocks = raw.size / 65535 + 1;
+    size_t zSize = 2 + raw.size + 5 * blocks + 4;
     Buffer z;
     BufInit(&z);
+    BufReserve(&z, zSize);
     ZlibStored(raw.data, raw.size, &z);
     BufFree(&raw);
 
+    BufReserve(out, sizeof kSignature + (12 + sizeof ihdr) + (12 + z.size) + 12);
     BufPut(out, kSignature, sizeof kSignature);
     PutChunk(out, "IHDR", ihdr, sizeof ihdr);
     PutChunk(out, "IDAT", z.data, z.size);

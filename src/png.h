@@ -1,4 +1,4 @@
-// Растеризация QR-кода в монохромный PNG и base64, без внешних библиотек.
+// Растеризация QR-кода в PNG (RGB, 8 бит на канал) и base64, без внешних библиотек.
 #pragma once
 
 #include <stddef.h>
@@ -17,9 +17,11 @@ void BufFree(Buffer *b);
 void BufPut(Buffer *b, const void *p, size_t n);
 
 // Самая большая сторона картинки в пикселях, которую согласны рисовать.
-const int kMaxImageSide = 8192;
+// RGB без сжатия: 4096 px — около 50 МБ на картинку, это ещё влезает в 32-битный процесс 1С.
+// Самый большой QR (версия 40) с полем 4 — это 185 модулей, то есть до 22 px на модуль.
+const int kMaxImageSide = 4096;
 
-// Рисует QR-код (буфер qrcodegen) в PNG 1 бит/пиксель:
+// Рисует QR-код (буфер qrcodegen) в PNG RGB 8 бит на канал:
 // scale пикселей на модуль, border модулей белого поля с каждой стороны.
 bool RenderQrPng(const uint8_t qrcode[], int scale, int border, Buffer *out);
 

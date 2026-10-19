@@ -54,12 +54,17 @@ def check_png(path, scale, border):
         pos += 12 + length
     assert [k for k, _ in chunks] == [b"IHDR", b"IDAT", b"IEND"], "неожиданные чанки"
     w, h, depth, color, _, _, interlace = struct.unpack(">IIBBBBB", chunks[0][1])
-    assert (depth, color, interlace) == (1, 0, 0), "ожидался 1 бит, оттенки серого"
+    # RGB 8 бит на канал: монохромный PNG (1 бит, оттенки серого) 1С 8.1 показывает пустым.
+    assert (depth, color, interlace) == (8, 2, 0), "ожидался RGB, 8 бит на канал"
     assert w == h and w % scale == 0 and w // scale >= 21 + 2 * border, f"странный размер {w}x{h}"
     raw = zlib.decompress(chunks[1][1])
-    stride = (w + 7) // 8 + 1
+    stride = w * 3 + 1
     assert len(raw) == stride * h, "размер распакованных данных не сходится"
     assert all(raw[y * stride] == 0 for y in range(h)), "фильтр строки не 0"
+    pixels = b"".join(raw[y * stride + 1:(y + 1) * stride] for y in range(h))
+    assert set(pixels) <= {0, 255}, "цвета кроме чёрного и белого"
+    assert all(pixels[i] == pixels[i + 1] == pixels[i + 2] for i in range(0, len(pixels), 3)), \
+        "пиксель не серый"
     return w, h
 
 
